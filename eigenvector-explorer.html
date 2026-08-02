@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Eigenvector Field — covariance explorer</title>
+<style>
+  :root{
+    --bg:#0d1210;
+    --panel:#121a17;
+    --panel-2:#161f1b;
+    --line:#24332c;
+    --ink:#eaf2ec;
+    --ink-dim:#8fa89c;
+    --pc1:#ff8a4c;
+    --pc2:#4cc9ff;
+    --dot:#5f8f7a;
+    --dot-glow:#a9d8c2;
+    --accent:#e8ff6b;
+    --mono: "IBM Plex Mono","SFMono-Regular",Consolas,monospace;
+    --serif: "Newsreader","Iowan Old Style",Georgia,serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:
+      radial-gradient(1200px 700px at 15% -10%, #16241d 0%, transparent 60%),
+      radial-gradient(900px 600px at 110% 110%, #131c22 0%, transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--mono);
+    -webkit-font-smoothing:antialiased;
+  }
+  @font-face{
+    font-family:"Newsreader";
+    src:local("Georgia");
+  }
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:36px 22px 60px;
+  }
+
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:24px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:18px;
+    margin-bottom:26px;
+    flex-wrap:wrap;
+  }
+  header .title-block{max-width:640px;}
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:clamp(28px,3.4vw,42px);
+    line-height:1.05;
+    margin:0 0 10px;
+    letter-spacing:-0.01em;
+  }
+  h1 em{ color:var(--pc1); font-style:normal; }
+  header p{
+    color:var(--ink-dim);
+    font-size:13.5px;
+    line-height:1.55;
+    margin:0;
+    max-width:52ch;
+  }
+  .badge-row{
+    display:flex; gap:10px; font-size:11px; color:var(--ink-dim);
+    letter-spacing:.03em;
+  }
+  .badge-row span{
+    border:1px solid var(--line);
+    padding:5px 10px;
+    border-radius:100px;
+  }
+
+  .layout{
+    display:grid;
+    grid-template-columns: 1.55fr 1fr;
+    gap:22px;
+    align-items:start;
+  }
+  @media (max-width:920px){
+    .layout{ grid-template-columns: 1fr; }
+  }
+
+  .panel{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px 18px 14px;
+  }
+
+  .canvas-head{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:10px;
+  }
+  .canvas-head h2{
+    font-family:var(--serif); font-weight:500; font-size:17px; margin:0;
+    color:var(--ink);
+  }
+  .canvas-head .hint{
+    font-size:11px; color:var(--ink-dim);
+  }
+
+  canvas#scene{
+    width:100%;
+    aspect-ratio: 1 / 1;
+    display:block;
+    border-radius:10px;
+    background:
+      radial-gradient(circle at 50% 50%, #0f1614 0%, #0a0f0d 100%);
+    border:1px solid var(--line);
+    touch-action: none;
+  }
+
+  .legend{
+    display:flex; gap:18px; flex-wrap:wrap;
+    margin-top:12px; font-size:11.5px; color:var(--ink-dim);
+  }
+  .legend .item{ display:flex; align-items:center; gap:7px; }
+  .swatch{ width:16px; height:3px; border-radius:2px; display:inline-block; }
+
+  /* Controls */
+  .controls h2{
+    font-family:var(--serif); font-weight:500; font-size:17px; margin:0 0 4px;
+  }
+  .controls .sub{ color:var(--ink-dim); font-size:12px; margin-bottom:18px; }
+
+  .field{ margin-bottom:20px; }
+  .field-label{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-size:12px; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--ink-dim); margin-bottom:8px;
+  }
+  .field-label b{
+    color:var(--ink); font-family:var(--mono); font-size:13px;
+    letter-spacing:0; text-transform:none;
+  }
+
+  /* scroll-style slider */
+  input[type="range"]{
+    -webkit-appearance:none;
+    appearance:none;
+    width:100%;
+    height:34px;
+    background:transparent;
+    cursor: ns-resize;
+    cursor: grab;
+  }
+  input[type="range"]::-webkit-slider-runnable-track{
+    height:6px;
+    border-radius:4px;
+    background:linear-gradient(90deg, var(--pc1), var(--line) 0%);
+    background: var(--line);
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:16px; height:16px;
+    margin-top:-5px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid #0d1210;
+    box-shadow:0 0 0 1px var(--accent);
+  }
+  input[type="range"]::-moz-range-track{
+    height:6px; border-radius:4px; background:var(--line);
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:14px; height:14px; border-radius:50%;
+    background:var(--accent); border:2px solid #0d1210;
+  }
+
+  .scroll-hint{
+    font-size:10.5px; color:var(--ink-dim); margin-top:6px;
+    display:flex; align-items:center; gap:5px;
+  }
+
+  select, .pattern-grid{
+    width:100%;
+  }
+  .pattern-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:8px;
+    margin-bottom:4px;
+  }
+  .pattern-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink-dim);
+    background:#0f1613;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:9px 8px;
+    cursor:pointer;
+    text-align:left;
+    transition:border-color .15s, color .15s, background .15s;
+  }
+  .pattern-btn:hover{ color:var(--ink); border-color:#3a4a41; }
+  .pattern-btn.active{
+    color:var(--bg);
+    background:var(--accent);
+    border-color:var(--accent);
+    font-weight:600;
+  }
+
+  .stat-block{
+    border-top:1px solid var(--line);
+    margin-top:22px;
+    padding-top:16px;
+  }
+  .stat-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:7px 0;
+    font-size:12.5px;
+    border-bottom:1px dashed #1c2721;
+  }
+  .stat-row:last-child{ border-bottom:none; }
+  .stat-row .k{ color:var(--ink-dim); display:flex; align-items:center; gap:8px; }
+  .stat-row .v{ color:var(--ink); font-variant-numeric: tabular-nums; }
+  .dotc{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+
+  .matrix{
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--ink);
+    background:#0f1613;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px 14px;
+    margin-top:14px;
+    line-height:1.7;
+  }
+  .matrix .m-title{ color:var(--ink-dim); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; margin-bottom:6px;}
+  .matrix .row{ display:flex; gap:14px; }
+  .matrix .brack{ color:var(--ink-dim); }
+
+  footer{
+    margin-top:26px;
+    color:var(--ink-dim);
+    font-size:11px;
+    text-align:center;
+  }
+  footer a{ color:var(--ink-dim); }
+
+  @media (prefers-reduced-motion: reduce){
+    * { transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="title-block">
+      <div class="eyebrow">Linear Algebra · Live Demo</div>
+      <h1>The eigenvectors point <em>where the data spreads.</em></h1>
+      <p>Reshape the point cloud below. As you do, its covariance matrix changes — and its eigenvectors, drawn as arrows, swing and stretch in real time to track the two axes of maximum variance.</p>
+    </div>
+    <div class="badge-row">
+      <span>PCA basis</span>
+      <span>2×2 covariance</span>
+      <span>Live recompute</span>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <div class="panel">
+      <div class="canvas-head">
+        <h2>Point cloud &amp; eigenvector field</h2>
+        <div class="hint">n = <span id="nPoints">300</span> points</div>
+      </div>
+      <canvas id="scene" width="900" height="900"></canvas>
+      <div class="legend">
+        <span class="item"><span class="swatch" style="background:var(--pc1)"></span>λ₁ (major axis)</span>
+        <span class="item"><span class="swatch" style="background:var(--pc2)"></span>λ₂ (minor axis)</span>
+        <span class="item"><span class="swatch" style="background:var(--dot);height:8px;width:8px;border-radius:50%;"></span>sample point</span>
+      </div>
+    </div>
+
+    <div class="panel controls">
+      <h2>Shape the distribution</h2>
+      <div class="sub">Scroll a slider, or drag directly on the canvas to rotate.</div>
+
+      <div class="field">
+        <div class="pattern-grid" id="patternGrid"></div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Rotation angle <b id="angleVal">0°</b></div>
+        <input type="range" id="angle" min="-90" max="90" step="1" value="0">
+        <div class="scroll-hint">↕ scroll on this slider to nudge by 1°</div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Spread along major axis <b id="s1Val">1.00</b></div>
+        <input type="range" id="s1" min="20" max="220" step="1" value="150">
+      </div>
+
+      <div class="field">
+        <div class="field-label">Spread along minor axis <b id="s2Val">1.00</b></div>
+        <input type="range" id="s2" min="10" max="220" step="1" value="55">
+      </div>
+
+      <div class="field">
+        <div class="field-label">Sample size <b id="nVal">300</b></div>
+        <input type="range" id="nSlider" min="40" max="800" step="10" value="300">
+      </div>
+
+      <div class="stat-block">
+        <div class="stat-row">
+          <span class="k"><span class="dotc" style="background:var(--pc1)"></span>λ₁ eigenvalue</span>
+          <span class="v" id="lam1">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="k"><span class="dotc" style="background:var(--pc1)"></span>v₁ direction</span>
+          <span class="v" id="vec1">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="k"><span class="dotc" style="background:var(--pc2)"></span>λ₂ eigenvalue</span>
+          <span class="v" id="lam2">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="k"><span class="dotc" style="background:var(--pc2)"></span>v₂ direction</span>
+          <span class="v" id="vec2">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="k">Condition #, λ₁/λ₂</span>
+          <span class="v" id="condNum">—</span>
+        </div>
+      </div>
+
+      <div class="matrix">
+        <div class="m-title">Sample covariance matrix Σ</div>
+        <div class="row">
+          <span class="brack">[</span>
+          <span id="m00">0.00</span>
+          <span id="m01">0.00</span>
+          <span class="brack">]</span>
+        </div>
+        <div class="row">
+          <span class="brack">[</span>
+          <span id="m10">0.00</span>
+          <span id="m11">0.00</span>
+          <span class="brack">]</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>Eigenvectors of Σ = covariance of the point cloud, via 2×2 closed-form eigendecomposition · drag on canvas to rotate · scroll any slider to fine-tune</footer>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2;
+
+  const angleSlider = document.getElementById('angle');
+  const s1Slider = document.getElementById('s1');
+  const s2Slider = document.getElementById('s2');
+  const nSlider = document.getElementById('nSlider');
+
+  const angleVal = document.getElementById('angleVal');
+  const s1Val = document.getElementById('s1Val');
+  const s2Val = document.getElementById('s2Val');
+  const nVal = document.getElementById('nVal');
+  const nPoints = document.getElementById('nPoints');
+
+  const lam1El = document.getElementById('lam1');
+  const lam2El = document.getElementById('lam2');
+  const vec1El = document.getElementById('vec1');
+  const vec2El = document.getElementById('vec2');
+  const condEl = document.getElementById('condNum');
+  const m00 = document.getElementById('m00'), m01 = document.getElementById('m01');
+  const m10 = document.getElementById('m10'), m11 = document.getElementById('m11');
+
+  const PATTERNS = [
+    {key:'gaussian', label:'Gaussian blob'},
+    {key:'ring',      label:'Ring / annulus'},
+    {key:'twomoons',  label:'Two moons'},
+    {key:'cross',     label:'Plus / cross'},
+    {key:'line',      label:'Thin line'},
+    {key:'uniform',   label:'Uniform square'},
+  ];
+  let currentPattern = 'gaussian';
+
+  const grid = document.getElementById('patternGrid');
+  PATTERNS.forEach(p=>{
+    const b = document.createElement('button');
+    b.className = 'pattern-btn' + (p.key===currentPattern ? ' active':'');
+    b.textContent = p.label;
+    b.dataset.key = p.key;
+    b.addEventListener('click', ()=>{
+      currentPattern = p.key;
+      [...grid.children].forEach(c=>c.classList.remove('active'));
+      b.classList.add('active');
+      regenerate();
+    });
+    grid.appendChild(b);
+  });
+
+  // deterministic-ish RNG so the cloud doesn't fully reshuffle each frame
+  let seed = 42;
+  function rand(){
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return (seed / 0x7fffffff);
+  }
+  function gaussRand(){
+    let u=0,v=0;
+    while(u===0) u=rand();
+    while(v===0) v=rand();
+    return Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v);
+  }
+
+  let basePoints = []; // unit-scale, unrotated, pattern-local coords
+
+  function genPattern(key, n){
+    const pts = [];
+    for(let i=0;i<n;i++){
+      let x=0,y=0;
+      if(key==='gaussian'){
+        x = gaussRand(); y = gaussRand();
+      } else if(key==='ring'){
+        const t = rand()*Math.PI*2;
+        const r = 1 + gaussRand()*0.08;
+        x = Math.cos(t)*r; y = Math.sin(t)*r;
+      } else if(key==='twomoons'){
+        const side = rand()<0.5?0:1;
+        const t = rand()*Math.PI;
+        if(side===0){
+          x = Math.cos(t); y = Math.sin(t);
+        } else {
+          x = 1-Math.cos(t); y = 1-Math.sin(t)-0.5;
+        }
+        x += gaussRand()*0.06; y += gaussRand()*0.06;
+      } else if(key==='cross'){
+        if(rand()<0.5){
+          x = (rand()*2-1); y = gaussRand()*0.12;
+        } else {
+          x = gaussRand()*0.12; y = (rand()*2-1);
+        }
+      } else if(key==='line'){
+        x = (rand()*2-1);
+        y = gaussRand()*0.06;
+      } else if(key==='uniform'){
+        x = rand()*2-1; y = rand()*2-1;
+      }
+      pts.push([x,y]);
+    }
+    return pts;
+  }
+
+  function regenerate(){
+    const n = parseInt(nSlider.value,10);
+    basePoints = genPattern(currentPattern, n);
+    nPoints.textContent = n;
+    nVal.textContent = n;
+    draw();
+  }
+
+  // dragging on canvas rotates
+  let dragging = false;
+  canvas.addEventListener('pointerdown', e=>{ dragging = true; handleDrag(e); });
+  window.addEventListener('pointerup', ()=> dragging=false);
+  window.addEventListener('pointermove', e=>{ if(dragging) handleDrag(e); });
+  function handleDrag(e){
+    const rect = canvas.getBoundingClientRect();
+    const px = e.clientX - rect.left - rect.width/2;
+    const py = e.clientY - rect.top - rect.height/2;
+    let ang = Math.atan2(-py, px) * 180/Math.PI;
+    // map to slider's -90..90 range smoothly
+    let mapped = ((ang % 180) + 180) % 180;
+    if(mapped>90) mapped -= 180;
+    angleSlider.value = Math.round(mapped);
+    updateFromControls();
+  }
+
+  // scroll on sliders nudges value
+  [angleSlider, s1Slider, s2Slider, nSlider].forEach(sl=>{
+    sl.addEventListener('wheel', e=>{
+      e.preventDefault();
+      const step = parseFloat(sl.step)||1;
+      const dir = e.deltaY > 0 ? -1 : 1;
+      let v = parseFloat(sl.value) + dir*step*(sl===nSlider?10:1);
+      v = Math.max(parseFloat(sl.min), Math.min(parseFloat(sl.max), v));
+      sl.value = v;
+      updateFromControls();
+    }, {passive:false});
+  });
+
+  angleSlider.addEventListener('input', updateFromControls);
+  s1Slider.addEventListener('input', updateFromControls);
+  s2Slider.addEventListener('input', updateFromControls);
+  nSlider.addEventListener('input', regenerate);
+
+  function updateFromControls(){
+    angleVal.textContent = angleSlider.value + '°';
+    s1Val.textContent = (s1Slider.value/150).toFixed(2);
+    s2Val.textContent = (s2Slider.value/150).toFixed(2);
+    draw();
+  }
+
+  function transformedPoints(){
+    const ang = parseFloat(angleSlider.value) * Math.PI/180;
+    const s1 = parseFloat(s1Slider.value);
+    const s2 = parseFloat(s2Slider.value);
+    const cosA = Math.cos(ang), sinA = Math.sin(ang);
+    return basePoints.map(([x,y])=>{
+      // scale in pattern-local axes
+      const sx = x*s1, sy = y*s2;
+      // rotate into screen axes
+      const rx = sx*cosA - sy*sinA;
+      const ry = sx*sinA + sy*cosA;
+      return [rx, ry];
+    });
+  }
+
+  function covariance(pts){
+    let mx=0,my=0;
+    pts.forEach(([x,y])=>{ mx+=x; my+=y; });
+    mx/=pts.length; my/=pts.length;
+    let sxx=0, syy=0, sxy=0;
+    pts.forEach(([x,y])=>{
+      const dx=x-mx, dy=y-my;
+      sxx += dx*dx; syy += dy*dy; sxy += dx*dy;
+    });
+    const denom = Math.max(1, pts.length-1);
+    return {sxx: sxx/denom, syy: syy/denom, sxy: sxy/denom, mx, my};
+  }
+
+  function eig2x2(a,b,c,d){
+    // matrix [[a,b],[c,d]], symmetric so b===c expected
+    const tr = a+d;
+    const det = a*d - b*c;
+    const disc = Math.sqrt(Math.max(0, tr*tr/4 - det));
+    const l1 = tr/2 + disc;
+    const l2 = tr/2 - disc;
+    function vecFor(l){
+      // (a-l)x + b*y = 0
+      if(Math.abs(b) > 1e-9){
+        const vx = -b, vy = (a-l);
+        const norm = Math.hypot(vx,vy) || 1;
+        return [vx/norm, vy/norm];
+      } else if(Math.abs(c) > 1e-9){
+        const vx = (d-l), vy = -c;
+        const norm = Math.hypot(vx,vy) || 1;
+        return [vx/norm, vy/norm];
+      } else {
+        // diagonal matrix already
+        return Math.abs(a-l) < Math.abs(d-l) ? [1,0] : [0,1];
+      }
+    }
+    return {l1, l2, v1: vecFor(l1), v2: vecFor(l2)};
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // subtle grid
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    const step = 45;
+    for(let x=0;x<=W;x+=step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for(let y=0;y<=H;y+=step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    // axes
+    ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+    ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(W,cy); ctx.stroke();
+    ctx.restore();
+
+    const pts = transformedPoints();
+    const cov = covariance(pts);
+    const eig = eig2x2(cov.sxx, cov.sxy, cov.sxy, cov.syy);
+
+    // draw points
+    ctx.save();
+    pts.forEach(([x,y])=>{
+      const px = cx + x, py = cy - y;
+      const g = ctx.createRadialGradient(px,py,0,px,py,4.2);
+      g.addColorStop(0, 'rgba(169,216,194,0.95)');
+      g.addColorStop(1, 'rgba(95,143,122,0.15)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(px,py,3.1,0,Math.PI*2);
+      ctx.fill();
+    });
+    ctx.restore();
+
+    // eigenvector arrows, scaled by sqrt(eigenvalue) ~ 2 std devs, from data centroid
+    const centerPx = cx + cov.mx, centerPy = cy - cov.my;
+    function drawArrow(vec, lam, color, scaleBoost){
+      const len = Math.sqrt(Math.max(lam,0)) * 2.1 * scaleBoost;
+      const ex = centerPx + vec[0]*len;
+      const ey = centerPy - vec[1]*len;
+      const sx = centerPx - vec[0]*len;
+      const sy = centerPy + vec[1]*len;
+
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 14;
+
+      ctx.beginPath();
+      ctx.moveTo(sx,sy);
+      ctx.lineTo(ex,ey);
+      ctx.stroke();
+
+      // arrowhead at positive end
+      const headLen = 13;
+      const ang = Math.atan2(ey-centerPy, ex-centerPx);
+      ctx.beginPath();
+      ctx.moveTo(ex, ey);
+      ctx.lineTo(ex - headLen*Math.cos(ang-0.35), ey - headLen*Math.sin(ang-0.35));
+      ctx.lineTo(ex - headLen*Math.cos(ang+0.35), ey - headLen*Math.sin(ang+0.35));
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    drawArrow(eig.v1, eig.l1, getVar('--pc2'), 1); // draw minor first (so major sits on top)
+    drawArrow(eig.v2, eig.l2, getVar('--pc2'), 1);
+    drawArrow(eig.v1, eig.l1, getVar('--pc1'), 1);
+
+    // centroid marker
+    ctx.save();
+    ctx.fillStyle = '#e8ff6b';
+    ctx.beginPath();
+    ctx.arc(centerPx, centerPy, 3, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    // stat panel updates
+    lam1El.textContent = eig.l1.toFixed(1);
+    lam2El.textContent = eig.l2.toFixed(1);
+    vec1El.textContent = `[${eig.v1[0].toFixed(2)}, ${eig.v1[1].toFixed(2)}]`;
+    vec2El.textContent = `[${eig.v2[0].toFixed(2)}, ${eig.v2[1].toFixed(2)}]`;
+    condEl.textContent = eig.l2 > 1e-6 ? (eig.l1/eig.l2).toFixed(2) : '∞';
+
+    m00.textContent = cov.sxx.toFixed(1);
+    m01.textContent = cov.sxy.toFixed(1);
+    m10.textContent = cov.sxy.toFixed(1);
+    m11.textContent = cov.syy.toFixed(1);
+  }
+
+  function getVar(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  regenerate();
+})();
+</script>
+</body>
+</html>
