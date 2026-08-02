@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Entropy Visualizer — Understanding Entropy</title>
+<style>
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    background: #1B1F3B;
+    color: #1B1F3B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+  .card {
+    background: #FFFFFF;
+    border-radius: 20px;
+    padding: 40px 48px;
+    width: 760px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0 0 4px;
+    color: #1B1F3B;
+  }
+  .sub {
+    font-size: 14px;
+    color: #6B7094;
+    margin: 0 0 28px;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .row label {
+    font-size: 15px;
+    font-weight: 600;
+    min-width: 120px;
+  }
+  input[type=range] {
+    flex: 1;
+    height: 8px;
+    -webkit-appearance: none;
+    background: #EFF1FA;
+    border-radius: 4px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #F4623A;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(244,98,58,0.5);
+  }
+  .pval {
+    font-size: 20px;
+    font-weight: 700;
+    min-width: 60px;
+    text-align: right;
+    color: #F4623A;
+  }
+  .stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat {
+    flex: 1;
+    background: #F5F6FA;
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .stat.accent {
+    background: #FCE4DD;
+  }
+  .stat .label {
+    font-size: 12px;
+    color: #6B7094;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .stat.accent .label {
+    color: #B84324;
+  }
+  .stat .value {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1B1F3B;
+  }
+  .stat.accent .value {
+    color: #F4623A;
+  }
+  #chartWrap {
+    position: relative;
+    height: 320px;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Understanding Entropy</h1>
+  <p class="sub">Drag the slider to see how uncertainty peaks at p = 0.5</p>
+
+  <div class="row">
+    <label for="pslider">P(pass) = p</label>
+    <input type="range" min="0" max="1" step="0.01" value="0.5" id="pslider">
+    <span class="pval" id="pval">0.50</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="label">P(pass)</div>
+      <div class="value" id="passval">0.50</div>
+    </div>
+    <div class="stat">
+      <div class="label">P(fail)</div>
+      <div class="value" id="failval">0.50</div>
+    </div>
+    <div class="stat accent">
+      <div class="label">Entropy H(p)</div>
+      <div class="value" id="hval">1.00</div>
+    </div>
+  </div>
+
+  <div id="chartWrap">
+    <canvas id="hillChart"></canvas>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+function entropy(p) {
+  if (p <= 0 || p >= 1) return 0;
+  return -(p * Math.log2(p) + (1 - p) * Math.log2(1 - p));
+}
+
+const N = 100;
+const labels = [];
+const data = [];
+for (let i = 0; i <= N; i++) {
+  const p = i / N;
+  labels.push(p.toFixed(2));
+  data.push(entropy(p));
+}
+
+const ctx = document.getElementById('hillChart');
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [
+      {
+        label: 'Entropy',
+        data: data,
+        borderColor: '#F4623A',
+        backgroundColor: 'rgba(244,98,58,0.12)',
+        fill: true,
+        pointRadius: 0,
+        borderWidth: 3,
+        tension: 0.1,
+      },
+      {
+        label: 'Current p',
+        data: [],
+        borderColor: '#F4623A',
+        backgroundColor: '#F4623A',
+        pointRadius: 9,
+        pointHoverRadius: 9,
+        showLine: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 150 },
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    scales: {
+      x: {
+        title: { display: true, text: 'probability of passing (p)', color: '#6B7094', font: { size: 13 } },
+        ticks: { color: '#6B7094', maxTicksLimit: 6, font: { size: 12 } },
+        grid: { display: false },
+      },
+      y: {
+        min: 0, max: 1.05,
+        title: { display: true, text: 'Entropy H(p)', color: '#6B7094', font: { size: 13 } },
+        ticks: { color: '#6B7094', font: { size: 12 } },
+        grid: { color: '#EFF1FA' },
+      }
+    }
+  }
+});
+
+const slider = document.getElementById('pslider');
+const pval = document.getElementById('pval');
+const passval = document.getElementById('passval');
+const failval = document.getElementById('failval');
+const hval = document.getElementById('hval');
+
+function updateMarker(p) {
+  const idx = Math.round(p * N);
+  chart.data.datasets[1].data = labels.map((l, i) => (i === idx ? entropy(p) : null));
+  chart.update('none');
+}
+
+slider.addEventListener('input', () => {
+  const p = parseFloat(slider.value);
+  pval.textContent = p.toFixed(2);
+  passval.textContent = p.toFixed(2);
+  failval.textContent = (1 - p).toFixed(2);
+  hval.textContent = entropy(p).toFixed(2);
+  updateMarker(p);
+});
+
+updateMarker(0.5);
+</script>
+</body>
+</html>
