@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ML Visual Lab — Sajil C.K.</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#0d1210;
+    --panel:#121a17;
+    --panel-2:#161f1b;
+    --line:#24332c;
+    --ink:#eaf2ec;
+    --ink-dim:#8fa89c;
+    --accent:#e8ff6b;
+    --pc1:#ff8a4c;
+    --pc2:#4cc9ff;
+    --mono: "IBM Plex Mono","SFMono-Regular",Consolas,monospace;
+    --serif: "Newsreader","Iowan Old Style",Georgia,serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    background:
+      radial-gradient(1200px 700px at 15% -10%, #16241d 0%, transparent 60%),
+      radial-gradient(900px 600px at 110% 110%, #131c22 0%, transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--mono);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{
+    max-width:920px;
+    margin:0 auto;
+    padding:56px 22px 70px;
+  }
+
+  header{
+    border-bottom:1px solid var(--line);
+    padding-bottom:24px;
+    margin-bottom:36px;
+  }
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:12px;
+  }
+  h1{
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:clamp(30px,4.4vw,46px);
+    line-height:1.05;
+    margin:0 0 14px;
+    letter-spacing:-0.01em;
+  }
+  h1 em{ color:var(--pc1); font-style:normal; }
+  header p{
+    color:var(--ink-dim);
+    font-size:14px;
+    line-height:1.6;
+    margin:0;
+    max-width:56ch;
+  }
+  .meta-row{
+    display:flex; gap:10px; margin-top:18px; flex-wrap:wrap;
+  }
+  .meta-row span{
+    font-size:11px; color:var(--ink-dim);
+    border:1px solid var(--line);
+    padding:5px 10px; border-radius:100px;
+  }
+
+  .list-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin-bottom:16px;
+  }
+  .list-head h2{
+    font-family:var(--serif); font-weight:500; font-size:19px; margin:0;
+  }
+  .list-head .count{ font-size:11px; color:var(--ink-dim); }
+
+  .card{
+    display:grid;
+    grid-template-columns: 64px 1fr auto;
+    align-items:center;
+    gap:20px;
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:20px 22px;
+    margin-bottom:14px;
+    text-decoration:none;
+    color:var(--ink);
+    transition:border-color .15s, transform .15s;
+  }
+  .card:hover{
+    border-color:#3a4a41;
+    transform:translateY(-1px);
+  }
+  .card:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
+  .index-num{
+    font-family:var(--serif);
+    font-size:28px;
+    color:var(--ink-dim);
+    text-align:center;
+  }
+  .card-body h3{
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:18px;
+    margin:0 0 6px;
+  }
+  .card-body p{
+    font-size:12.5px;
+    color:var(--ink-dim);
+    margin:0 0 10px;
+    line-height:1.5;
+    max-width:52ch;
+  }
+  .tag-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .tag-row span{
+    font-size:10.5px;
+    letter-spacing:.03em;
+    padding:3px 9px;
+    border-radius:100px;
+    border:1px solid var(--line);
+    color:var(--ink-dim);
+  }
+  .tag-row span.pc1{ color:var(--pc1); border-color:rgba(255,138,76,0.35); }
+  .tag-row span.pc2{ color:var(--pc2); border-color:rgba(76,201,255,0.35); }
+
+  .go{
+    font-size:12px;
+    color:var(--ink);
+    border:1px solid var(--line);
+    padding:9px 16px;
+    border-radius:8px;
+    white-space:nowrap;
+  }
+  .card:hover .go{
+    border-color:var(--accent);
+    color:var(--accent);
+  }
+
+  @media (max-width:560px){
+    .card{ grid-template-columns: 1fr; text-align:left; }
+    .index-num{ text-align:left; }
+    .go{ justify-self:start; }
+  }
+
+  footer{
+    margin-top:44px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+    color:var(--ink-dim);
+    font-size:11.5px;
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  footer a{ color:var(--ink-dim); }
+  footer a:hover{ color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">ML Visual Lab</div>
+    <h1>Interactive intuitions for <em>machine learning</em>, one idea at a time.</h1>
+    <p>A small, growing collection of browser-based demos — built to make the math you'd otherwise just read about something you can drag, scroll, and watch change in real time.</p>
+    <div class="meta-row">
+      <span>No install required</span>
+      <span>Runs entirely in-browser</span>
+      <span>Free to use &amp; share</span>
+    </div>
+  </header>
+
+  <div class="list-head">
+    <h2>Visualizations</h2>
+    <span class="count">2 demos</span>
+  </div>
+
+  <a class="card" href="eigenvector-explorer.html">
+    <div class="index-num">01</div>
+    <div class="card-body">
+      <h3>Eigenvector Field</h3>
+      <p>Reshape a 2D point cloud — rotate it, stretch it, change its pattern — and watch the eigenvectors of its covariance matrix track the axes of maximum variance in real time.</p>
+      <div class="tag-row">
+        <span class="pc1">Linear Algebra</span>
+        <span class="pc2">PCA</span>
+        <span>Covariance</span>
+      </div>
+    </div>
+    <div class="go">Open →</div>
+  </a>
+
+  <a class="card" href="008_entropy_visualization.html">
+    <div class="index-num">02</div>
+    <div class="card-body">
+      <h3>Understanding Entropy</h3>
+      <p>Drag a single probability slider and see why uncertainty — measured in bits — peaks exactly at p = 0.5 and vanishes at the extremes.</p>
+      <div class="tag-row">
+        <span class="pc1">Information Theory</span>
+        <span>Entropy</span>
+      </div>
+    </div>
+    <div class="go">Open →</div>
+  </a>
+
+  <footer>
+    <span>Built by Sajil C.K.</span>
+    <span><a href="https://intuitivetutorial.com">intuitivetutorial.com</a> · <a href="https://linkedin.com/in/sajilck">LinkedIn</a> · <a href="https://twitter.com/cksajil">Twitter</a></span>
+  </footer>
+</div>
+</body>
+</html>
